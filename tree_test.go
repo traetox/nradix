@@ -204,6 +204,11 @@ func TestSet(t *testing.T) {
 	if !inf.equal(testValA) {
 		t.Errorf("Wrong value, expected %v, got %v", testValA, inf)
 	}
+	if inf, err = tr.FindIP(net.ParseIP("1.1.1.129")); err != nil {
+		t.Error(err)
+	} else if !inf.equal(testValA) {
+		t.Errorf("Wrong value, expected %v, got %v", testValA, inf)
+	}
 
 	tr.AddCIDR("1.1.1.0/25", testValB)
 	inf, err = tr.FindCIDR("1.1.1.0")
@@ -213,6 +218,12 @@ func TestSet(t *testing.T) {
 	if !inf.equal(testValB) {
 		t.Errorf("Wrong value, expected %v, got %v", testValB, inf)
 	}
+	if inf, err = tr.FindIP(net.ParseIP("1.1.1.129")); err != nil {
+		t.Error(err)
+	} else if !inf.equal(testValA) {
+		t.Errorf("Wrong value, expected %v, got %v", testValA, inf)
+	}
+
 	inf, err = tr.FindCIDR("1.1.1.0/24")
 	if err != nil {
 		t.Error(err)
@@ -286,15 +297,15 @@ func TestRegression(t *testing.T) {
 	} else if inf != nil {
 		t.Errorf("Wrong value, expected nil, got %v", inf)
 	}
-	if inf, err = tr.FindIP(net.ParseIP("1.1.1.128")); err != nil {
+	if inf, err = tr.FindIP(net.ParseIP("1.1.1.10")); err != nil {
 		t.Error(err)
-	} else if inf != nil {
-		t.Errorf("Wrong value, expected nil, got %v", inf)
+	} else if !inf.equal(testValB) {
+		t.Errorf("Wrong value, expected %v, got %v", testValB, inf)
 	}
 	if inf, err = tr.FindIP(net.ParseIP("1.1.1.12")); err != nil {
 		t.Error(err)
-	} else if inf != nil {
-		t.Errorf("Wrong value, expected nil, got %v", inf)
+	} else if !inf.equal(testValB) {
+		t.Errorf("Wrong value, expected %v, got %v", testValB, inf)
 	}
 
 }
