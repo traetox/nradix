@@ -103,6 +103,16 @@ func (tree *Tree) AddCIDRNative(ipn *net.IPNet, val datum) error {
 	return tree.insert(ipn.IP, ipn.Mask, val, false)
 }
 
+func (tree *Tree) UpdateCIDRNative(ipn *net.IPNet, val datum) error {
+	if ipn == nil {
+		return ErrBadIP
+	}
+	if len(ipn.IP) == net.IPv4len && len(ipn.Mask) == net.IPv4len {
+		return tree.insert32(binary.BigEndian.Uint32(ipn.IP), binary.BigEndian.Uint32(ipn.Mask), val, true)
+	}
+	return tree.insert(ipn.IP, ipn.Mask, val, true)
+}
+
 // AddCIDR adds value associated with IP/mask to the tree. Will return error for invalid CIDR or if value already exists.
 func (tree *Tree) SetCIDR(cidr string, val datum) error {
 	return tree.SetCIDRb([]byte(cidr), val)
