@@ -103,7 +103,7 @@ func (tree *Tree) AddCIDRNative(ipn *net.IPNet, val datum) error {
 	return tree.insert(ipn.IP, ipn.Mask, val, false)
 }
 
-func (tree *Tree) UpdateCIDRNative(ipn *net.IPNet, val datum) error {
+func (tree *Tree) SetCIDRNative(ipn *net.IPNet, val datum) error {
 	if ipn == nil {
 		return ErrBadIP
 	}
