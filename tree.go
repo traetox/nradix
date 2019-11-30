@@ -10,9 +10,11 @@ import (
 	"net"
 )
 
+type datum [][]byte
+
 type node struct {
 	left, right, parent *node
-	value               interface{}
+	value               datum
 }
 
 // Tree implements radix tree for working with IP/mask. Thread safety is not guaranteed, you should choose your own style of protecting safety of operations.
@@ -67,11 +69,11 @@ func NewTree(preallocate int) *Tree {
 }
 
 // AddCIDR adds value associated with IP/mask to the tree. Will return error for invalid CIDR or if value already exists.
-func (tree *Tree) AddCIDR(cidr string, val interface{}) error {
+func (tree *Tree) AddCIDR(cidr string, val datum) error {
 	return tree.AddCIDRb([]byte(cidr), val)
 }
 
-func (tree *Tree) AddCIDRb(cidr []byte, val interface{}) error {
+func (tree *Tree) AddCIDRb(cidr []byte, val datum) error {
 	if bytes.IndexByte(cidr, '.') > 0 {
 		ip, mask, err := parsecidr4(cidr)
 		if err != nil {
@@ -87,11 +89,11 @@ func (tree *Tree) AddCIDRb(cidr []byte, val interface{}) error {
 }
 
 // AddCIDR adds value associated with IP/mask to the tree. Will return error for invalid CIDR or if value already exists.
-func (tree *Tree) SetCIDR(cidr string, val interface{}) error {
+func (tree *Tree) SetCIDR(cidr string, val datum) error {
 	return tree.SetCIDRb([]byte(cidr), val)
 }
 
-func (tree *Tree) SetCIDRb(cidr []byte, val interface{}) error {
+func (tree *Tree) SetCIDRb(cidr []byte, val datum) error {
 	if bytes.IndexByte(cidr, '.') > 0 {
 		ip, mask, err := parsecidr4(cidr)
 		if err != nil {
@@ -148,11 +150,11 @@ func (tree *Tree) DeleteCIDRb(cidr []byte) error {
 }
 
 // Find CIDR traverses tree to proper Node and returns previously saved information in longest covered IP.
-func (tree *Tree) FindCIDR(cidr string) (interface{}, error) {
+func (tree *Tree) FindCIDR(cidr string) (datum, error) {
 	return tree.FindCIDRb([]byte(cidr))
 }
 
-func (tree *Tree) FindCIDRb(cidr []byte) (interface{}, error) {
+func (tree *Tree) FindCIDRb(cidr []byte) (datum, error) {
 	if bytes.IndexByte(cidr, '.') > 0 {
 		ip, mask, err := parsecidr4(cidr)
 		if err != nil {
@@ -167,7 +169,7 @@ func (tree *Tree) FindCIDRb(cidr []byte) (interface{}, error) {
 	return tree.find(ip, mask), nil
 }
 
-func (tree *Tree) insert32(key, mask uint32, value interface{}, overwrite bool) error {
+func (tree *Tree) insert32(key, mask uint32, value datum, overwrite bool) error {
 	bit := startbit
 	node := tree.root
 	next := tree.root
@@ -206,7 +208,7 @@ func (tree *Tree) insert32(key, mask uint32, value interface{}, overwrite bool) 
 	return nil
 }
 
-func (tree *Tree) insert(key net.IP, mask net.IPMask, value interface{}, overwrite bool) error {
+func (tree *Tree) insert(key net.IP, mask net.IPMask, value datum, overwrite bool) error {
 	if len(key) != len(mask) {
 		return ErrBadIP
 	}
@@ -371,7 +373,7 @@ func (tree *Tree) delete(key net.IP, mask net.IPMask, wholeRange bool) error {
 	return nil
 }
 
-func (tree *Tree) find32(key, mask uint32) (value interface{}) {
+func (tree *Tree) find32(key, mask uint32) (value datum) {
 	bit := startbit
 	node := tree.root
 	for node != nil {
@@ -392,9 +394,9 @@ func (tree *Tree) find32(key, mask uint32) (value interface{}) {
 	return value
 }
 
-func (tree *Tree) find(key net.IP, mask net.IPMask) (value interface{}) {
+func (tree *Tree) find(key net.IP, mask net.IPMask) (value datum) {
 	if len(key) != len(mask) {
-		return ErrBadIP
+		return nil
 	}
 	var i int
 	bit := startbyte
@@ -520,4 +522,17 @@ func parsecidr6(cidr []byte) (net.IP, net.IPMask, error) {
 		return nil, nil, ErrBadIP
 	}
 	return ip, net.IPMask{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, nil
+}
+
+func (d datum) equal(v datum) bool {
+	if len(v) != len(d) {
+		return false
+	}
+
+	for i := range d {
+		if !bytes.Equal(d[i], v[i]) {
+			return false
+		}
+	}
+	return true
 }
