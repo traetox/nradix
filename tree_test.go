@@ -5,6 +5,7 @@
 package nradix
 
 import (
+	"net"
 	"testing"
 )
 
@@ -285,6 +286,17 @@ func TestRegression(t *testing.T) {
 	} else if inf != nil {
 		t.Errorf("Wrong value, expected nil, got %v", inf)
 	}
+	if inf, err = tr.FindIP(net.ParseIP("1.1.1.128")); err != nil {
+		t.Error(err)
+	} else if inf != nil {
+		t.Errorf("Wrong value, expected nil, got %v", inf)
+	}
+	if inf, err = tr.FindIP(net.ParseIP("1.1.1.12")); err != nil {
+		t.Error(err)
+	} else if inf != nil {
+		t.Errorf("Wrong value, expected nil, got %v", inf)
+	}
+
 }
 
 func TestTree6(t *testing.T) {
@@ -356,5 +368,24 @@ func TestRegression6(t *testing.T) {
 		t.Errorf("Could not get /128 address from the tree, error: %s", err)
 	} else if !inf.equal(tv) {
 		t.Errorf("Wrong value from /128 test, got %v, expected %v", inf, tv)
+	}
+	inf, err = tr.FindIP(net.ParseIP("2620:10f:d000:100::5"))
+	if err != nil {
+		t.Errorf("Could not get ipv6 address from the tree, error: %s", err)
+	} else if !inf.equal(tv) {
+		t.Errorf("Wrong value from ipv6 test, got %v, expected %v", inf, tv)
+	}
+	inf, err = tr.FindIP(net.ParseIP("2620:10f:d000:100::2"))
+	if err != nil {
+		t.Errorf("Could not get ipv6 address from the tree, error: %s", err)
+	} else if !inf.equal(tv) {
+		t.Errorf("Wrong value from ipv6 test, got %v, expected %v", inf, tv)
+	}
+
+	inf, err = tr.FindIP(net.ParseIP("2620:10f:d000:100::13:44"))
+	if err != nil {
+		t.Errorf("Could not get ipv6 address from the tree, error: %s", err)
+	} else if !inf.equal(tv) {
+		t.Errorf("Wrong value from ipv6 test, got %v, expected %v", inf, tv)
 	}
 }

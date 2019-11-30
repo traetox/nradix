@@ -6,6 +6,7 @@ package nradix
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"net"
 )
@@ -34,6 +35,10 @@ var (
 	ErrNodeBusy = errors.New("Node Busy")
 	ErrNotFound = errors.New("No Such Node")
 	ErrBadIP    = errors.New("Bad IP address or mask")
+)
+
+var (
+	i6IpMask = net.IPMask{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
 )
 
 // NewTree creates Tree and preallocates (if preallocate not zero) number of nodes that would be ready to fill with data.
@@ -167,6 +172,34 @@ func (tree *Tree) FindCIDRb(cidr []byte) (datum, error) {
 		return nil, err
 	}
 	return tree.find(ip, mask), nil
+}
+
+func (tree *Tree) FindIP(ip net.IP) (datum, error) {
+	if isIPv4(ip) {
+		ip := binary.BigEndian.Uint32([]byte(ip))
+		return tree.find32(ip, 0xffffffff), nil
+	}
+	return tree.find(ip, i6IpMask), nil
+}
+
+func isIPv4(ip net.IP) bool {
+	if len(ip) == net.IPv4len {
+		return true
+	}
+	if len(ip) != net.IPv6len {
+		return false
+	}
+	return ip[10] == 0xff && ip[11] == 0xff && isZeros(ip[0:10])
+}
+
+// Is p all zeros?
+func isZeros(p net.IP) bool {
+	for i := 0; i < len(p); i++ {
+		if p[i] != 0 {
+			return false
+		}
+	}
+	return true
 }
 
 func (tree *Tree) insert32(key, mask uint32, value datum, overwrite bool) error {
@@ -521,7 +554,7 @@ func parsecidr6(cidr []byte) (net.IP, net.IPMask, error) {
 	if ip == nil {
 		return nil, nil, ErrBadIP
 	}
-	return ip, net.IPMask{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, nil
+	return ip, i6IpMask, nil
 }
 
 func (d datum) equal(v datum) bool {
