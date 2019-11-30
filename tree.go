@@ -10,7 +10,7 @@ import (
 	"net"
 )
 
-type datum [][]byte
+type datum []string
 
 type node struct {
 	left, right, parent *node
@@ -530,7 +530,7 @@ func (d datum) equal(v datum) bool {
 	}
 
 	for i := range d {
-		if !bytes.Equal(d[i], v[i]) {
+		if d[i] != v[i] {
 			return false
 		}
 	}

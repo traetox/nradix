@@ -4,14 +4,23 @@
 
 package nradix
 
-import "testing"
+import (
+	"testing"
+)
+
+var (
+	testValA = datum{"A"}
+	testValB = datum{"A", "B"}
+	testValC = datum{"A", "B", "C"}
+	testValD = datum{"A", "B", "D"}
+)
 
 func TestTree(t *testing.T) {
 	tr := NewTree(0)
 	if tr == nil || tr.root == nil {
 		t.Error("Did not create tree properly")
 	}
-	err := tr.AddCIDR("1.2.3.0/25", 1)
+	err := tr.AddCIDR("1.2.3.0/25", testValA)
 	if err != nil {
 		t.Error(err)
 	}
@@ -21,8 +30,8 @@ func TestTree(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 1 {
-		t.Errorf("Wrong value, expected 1, got %v", inf)
+	if !inf.equal(testValA) {
+		t.Errorf("Wrong value, expected %v, got %v", testValA, inf)
 	}
 
 	// Inside defined cidr
@@ -30,38 +39,35 @@ func TestTree(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 1 {
-		t.Errorf("Wrong value, expected 1, got %v", inf)
+	if !inf.equal(testValA) {
+		t.Errorf("Wrong value, expected %v, got %v", testValA, inf)
 	}
 	inf, err = tr.FindCIDR("1.2.3.60")
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 1 {
-		t.Errorf("Wrong value, expected 1, got %v", inf)
+	if !inf.equal(testValA) {
+		t.Errorf("Wrong value, expected %v, got %v", testValA, inf)
 	}
 
 	// Outside defined cidr
 	inf, err = tr.FindCIDR("1.2.3.160/32")
 	if err != nil {
 		t.Error(err)
-	}
-	if inf != nil {
+	} else if inf != nil {
 		t.Errorf("Wrong value, expected nil, got %v", inf)
 	}
 	inf, err = tr.FindCIDR("1.2.3.160")
 	if err != nil {
 		t.Error(err)
-	}
-	if inf != nil {
+	} else if inf != nil {
 		t.Errorf("Wrong value, expected nil, got %v", inf)
 	}
 
 	inf, err = tr.FindCIDR("1.2.3.128/25")
 	if err != nil {
 		t.Error(err)
-	}
-	if inf != nil {
+	} else if inf != nil {
 		t.Errorf("Wrong value, expected nil, got %v", inf)
 	}
 
@@ -69,30 +75,28 @@ func TestTree(t *testing.T) {
 	inf, err = tr.FindCIDR("1.2.3.0/24")
 	if err != nil {
 		t.Error(err)
-	}
-	if inf != nil {
+	} else if inf != nil {
 		t.Errorf("Wrong value, expected nil, got %v", inf)
 	}
 
 	// Covering defined
-	err = tr.AddCIDR("1.2.3.0/24", 2)
+	err = tr.AddCIDR("1.2.3.0/24", testValB)
 	if err != nil {
 		t.Error(err)
 	}
 	inf, err = tr.FindCIDR("1.2.3.0/24")
 	if err != nil {
 		t.Error(err)
-	}
-	if inf.(int) != 2 {
-		t.Errorf("Wrong value, expected 2, got %v", inf)
+	} else if !inf.equal(testValB) {
+		t.Errorf("Wrong value, expected %v, got %v", testValB, inf)
 	}
 
 	inf, err = tr.FindCIDR("1.2.3.160/32")
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 2 {
-		t.Errorf("Wrong value, expected 2, got %v", inf)
+	if !inf.equal(testValB) {
+		t.Errorf("Wrong value, expected %v, got %v", testValB, inf)
 	}
 
 	// Hit both covering and internal, should choose most specific
@@ -100,8 +104,8 @@ func TestTree(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 1 {
-		t.Errorf("Wrong value, expected 1, got %v", inf)
+	if !inf.equal(testValA) {
+		t.Errorf("Wrong value, expected %v, got %v", testValA, inf)
 	}
 
 	// Delete internal
@@ -115,12 +119,12 @@ func TestTree(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 2 {
-		t.Errorf("Wrong value, expected 2, got %v", inf)
+	if !inf.equal(testValB) {
+		t.Errorf("Wrong value, expected %v, got %v", testValB, inf)
 	}
 
 	// Add internal back in
-	err = tr.AddCIDR("1.2.3.0/25", 1)
+	err = tr.AddCIDR("1.2.3.0/25", testValA)
 	if err != nil {
 		t.Error(err)
 	}
@@ -136,8 +140,8 @@ func TestTree(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 1 {
-		t.Errorf("Wrong value, expected 1, got %v", inf)
+	if !inf.equal(testValA) {
+		t.Errorf("Wrong value, expected %v, got %v", testValA, inf)
 	}
 
 	// Find covering again
@@ -150,7 +154,7 @@ func TestTree(t *testing.T) {
 	}
 
 	// Add covering back in
-	err = tr.AddCIDR("1.2.3.0/24", 2)
+	err = tr.AddCIDR("1.2.3.0/24", testValB)
 	if err != nil {
 		t.Error(err)
 	}
@@ -158,8 +162,8 @@ func TestTree(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 2 {
-		t.Errorf("Wrong value, expected 2, got %v", inf)
+	if !inf.equal(testValB) {
+		t.Errorf("Wrong value, expected %v, got %v", testValB, inf)
 	}
 
 	// Delete the whole range
@@ -191,39 +195,39 @@ func TestSet(t *testing.T) {
 		t.Error("Did not create tree properly")
 	}
 
-	tr.AddCIDR("1.1.1.0/24", 1)
+	tr.AddCIDR("1.1.1.0/24", testValA)
 	inf, err := tr.FindCIDR("1.1.1.0")
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 1 {
-		t.Errorf("Wrong value, expected 1, got %v", inf)
+	if !inf.equal(testValA) {
+		t.Errorf("Wrong value, expected %v, got %v", testValA, inf)
 	}
 
-	tr.AddCIDR("1.1.1.0/25", 2)
+	tr.AddCIDR("1.1.1.0/25", testValB)
 	inf, err = tr.FindCIDR("1.1.1.0")
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 2 {
-		t.Errorf("Wrong value, expected 2, got %v", inf)
+	if !inf.equal(testValB) {
+		t.Errorf("Wrong value, expected %v, got %v", testValB, inf)
 	}
 	inf, err = tr.FindCIDR("1.1.1.0/24")
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 1 {
-		t.Errorf("Wrong value, expected 1, got %v", inf)
+	if !inf.equal(testValA) {
+		t.Errorf("Wrong value, expected %v, got %v", testValA, inf)
 	}
 
 	// add covering should fail
-	err = tr.AddCIDR("1.1.1.0/24", 60)
+	err = tr.AddCIDR("1.1.1.0/24", testValC)
 	if err != ErrNodeBusy {
 		t.Errorf("Should have gotten ErrNodeBusy, instead got err: %v", err)
 	}
 
 	// set covering
-	err = tr.SetCIDR("1.1.1.0/24", 3)
+	err = tr.SetCIDR("1.1.1.0/24", testValC)
 	if err != nil {
 		t.Error(err)
 	}
@@ -231,19 +235,19 @@ func TestSet(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 2 {
-		t.Errorf("Wrong value, expected 2, got %v", inf)
+	if !inf.equal(testValB) {
+		t.Errorf("Wrong value, expected %v, got %v", testValB, inf)
 	}
 	inf, err = tr.FindCIDR("1.1.1.0/24")
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 3 {
+	if !inf.equal(testValC) {
 		t.Errorf("Wrong value, expected 3, got %v", inf)
 	}
 
 	// set internal
-	err = tr.SetCIDR("1.1.1.0/25", 4)
+	err = tr.SetCIDR("1.1.1.0/25", testValD)
 	if err != nil {
 		t.Error(err)
 	}
@@ -251,15 +255,15 @@ func TestSet(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 4 {
-		t.Errorf("Wrong value, expected 4, got %v", inf)
+	if !inf.equal(testValD) {
+		t.Errorf("Wrong value, expected %v, got %v", testValD, inf)
 	}
 	inf, err = tr.FindCIDR("1.1.1.0/24")
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 3 {
-		t.Errorf("Wrong value, expected 3, got %v", inf)
+	if !inf.equal(testValC) {
+		t.Errorf("Wrong value, expected %v, got %v", testValC, inf)
 	}
 }
 
@@ -269,10 +273,10 @@ func TestRegression(t *testing.T) {
 		t.Error("Did not create tree properly")
 	}
 
-	tr.AddCIDR("1.1.1.0/24", 1)
+	tr.AddCIDR("1.1.1.0/24", testValA)
 
 	tr.DeleteCIDR("1.1.1.0/24")
-	tr.AddCIDR("1.1.1.0/25", 2)
+	tr.AddCIDR("1.1.1.0/25", testValB)
 
 	// inside old range, outside new range
 	inf, err := tr.FindCIDR("1.1.1.128")
@@ -288,7 +292,7 @@ func TestTree6(t *testing.T) {
 	if tr == nil || tr.root == nil {
 		t.Error("Did not create tree properly")
 	}
-	err := tr.AddCIDR("dead::0/16", 3)
+	err := tr.AddCIDR("dead::0/16", testValC)
 	if err != nil {
 		t.Error(err)
 	}
@@ -298,7 +302,7 @@ func TestTree6(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 3 {
+	if !inf.equal(testValC) {
 		t.Errorf("Wrong value, expected 3, got %v", inf)
 	}
 
@@ -312,7 +316,7 @@ func TestTree6(t *testing.T) {
 	}
 
 	// Subnet
-	err = tr.AddCIDR("dead:beef::0/48", 4)
+	err = tr.AddCIDR("dead:beef::0/48", testValD)
 	if err != nil {
 		t.Error(err)
 	}
@@ -322,8 +326,8 @@ func TestTree6(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 4 {
-		t.Errorf("Wrong value, expected 4, got %v", inf)
+	if !inf.equal(testValD) {
+		t.Errorf("Wrong value, expected %v, got %v", testValD, inf)
 	}
 
 	// Match outside defined subnet
@@ -331,8 +335,8 @@ func TestTree6(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if inf.(int) != 3 {
-		t.Errorf("Wrong value, expected 3, got %v", inf)
+	if !inf.equal(testValC) {
+		t.Errorf("Wrong value, expected %v, got %v", testValC, inf)
 	}
 
 }
@@ -343,13 +347,14 @@ func TestRegression6(t *testing.T) {
 		t.Error("Did not create tree properly")
 	}
 	// in one of the implementations /128 addresses were causing panic...
-	tr.AddCIDR("2620:10f::/32", 54321)
-	tr.AddCIDR("2620:10f:d000:100::5/128", 12345)
+	tv := datum{"54321"}
+	tr.AddCIDR("2620:10f::/32", tv)
+	tr.AddCIDR("2620:10f:d000:100::5/128", tv)
 
 	inf, err := tr.FindCIDR("2620:10f:d000:100::5/128")
 	if err != nil {
 		t.Errorf("Could not get /128 address from the tree, error: %s", err)
-	} else if inf.(int) != 12345 {
-		t.Errorf("Wrong value from /128 test, got %d, expected 12345", inf)
+	} else if !inf.equal(tv) {
+		t.Errorf("Wrong value from /128 test, got %v, expected %v", inf, tv)
 	}
 }
